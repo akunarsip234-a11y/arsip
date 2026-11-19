@@ -2,6 +2,7 @@
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { ambilInstansi } from "@/lib/data";
+import { petaNomorItem } from "@/lib/types";
 import { createSignedDownloadUrl } from "@/lib/storage";
 import { bolehKelola, sesiPengguna, tulisLog } from "@/lib/actions/guard";
 import { ForbiddenError, ValidationError, withApiErrorHandling } from "@/lib/errors";
@@ -56,22 +57,18 @@ export const POST = withApiErrorHandling(async (req: NextRequest) => {
     throw new ValidationError("Tidak ada data untuk diekspor.");
   }
 
-const daftarBerkas = Array.from(
-  new Set(daftar.map((item) => item.nomor_berkas?.trim()).filter((item): item is string => Boolean(item))),
-);
-
 const jumlahItem = new Map<string, number>();
-if (daftarBerkas.length) {
-  const semua = await prisma.arsip.findMany({
-    where: { deleted_at: null, nomor_berkas: { in: daftarBerkas } },
-    select: { nomor_berkas: true },
-  });
-  for (const item of semua) {
-    const kunci = item.nomor_berkas?.trim();
-    if (!kunci) continue;
-    jumlahItem.set(kunci, (jumlahItem.get(kunci) ?? 0) + 1);
-  }
+for (const item of daftar) {
+  const kunci = item.nomor_berkas?.trim();
+  if (!kunci) continue;
+  jumlahItem.set(kunci, (jumlahItem.get(kunci) ?? 0) + 1);
 }
+
+const semuaArsip = await prisma.arsip.findMany({
+  where: { deleted_at: null },
+  select: { id: true, folder_id: true, tanggal_arsip: true, nomor_arsip: true },
+});
+const nomorItem = petaNomorItem(semuaArsip);
 
 const arsip: SumberEkspor[] = daftar.map((item) => ({
   id: item.id,
@@ -81,7 +78,7 @@ const arsip: SumberEkspor[] = daftar.map((item) => ({
   tanggal_arsip: item.tanggal_arsip,
   keterangan: item.keterangan,
   nomor_berkas: item.nomor_berkas,
-  nomor_item: item.nomor_item,
+  nomor_item: nomorItem.get(item.id)?.toString() ?? null,
   indeks: item.indeks,
   jumlah_folder: item.jumlah_folder,
   tingkat_perkembangan: item.tingkat_perkembangan,

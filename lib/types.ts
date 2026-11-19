@@ -54,10 +54,6 @@ export type Arsip = {
   lokasi_folder?: string;
   kurun_waktu?: string;
   nomor_boks?: string;
-  file_path?: string;
-  file_name?: string;
-  file_size?: number;
-  file_type?: string;
 };
 
 export type Instansi = {
@@ -111,10 +107,6 @@ export type ArsipInput = {
   lokasi_folder?: string;
   kurun_waktu?: string;
   nomor_boks?: string;
-  file_path?: string;
-  file_name?: string;
-  file_size?: number;
-  file_type?: string;
 };
 
 export type FolderInput = {
@@ -168,6 +160,39 @@ export function formatWaktu(value: string) {
     hour: "2-digit",
     minute: "2-digit",
   }).format(tanggal);
+}
+
+type SumberNomorItem = {
+  id: string;
+  folder_id: string | null | undefined;
+  tanggal_arsip: string | Date;
+  nomor_arsip: string;
+};
+
+function kunciTanggal(value: string | Date) {
+  return value instanceof Date ? value.toISOString().slice(0, 10) : value.slice(0, 10);
+}
+
+export function petaNomorItem<T extends SumberNomorItem>(items: T[]): Map<string, number> {
+  const hasil = new Map<string, number>();
+  const perFolder = new Map<string, T[]>();
+  for (const item of items) {
+    const kunci = item.folder_id ?? "";
+    const daftar = perFolder.get(kunci) ?? [];
+    daftar.push(item);
+    perFolder.set(kunci, daftar);
+  }
+  for (const daftar of perFolder.values()) {
+    daftar
+      .slice()
+      .sort(
+        (a, b) =>
+          kunciTanggal(a.tanggal_arsip).localeCompare(kunciTanggal(b.tanggal_arsip)) ||
+          a.nomor_arsip.localeCompare(b.nomor_arsip),
+      )
+      .forEach((item, index) => hasil.set(item.id, index + 1));
+  }
+  return hasil;
 }
 
 export function inisial(nama: string) {

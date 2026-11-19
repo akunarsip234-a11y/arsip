@@ -9,11 +9,11 @@ let fontSiap = false;
 function siapkanFont() {
   if (fontSiap) return;
   pdfMake.setFonts({
-    Tinos: {
-      normal: path.join(FONT_DIR, "Tinos-Regular.ttf"),
-      bold: path.join(FONT_DIR, "Tinos-Bold.ttf"),
-      italics: path.join(FONT_DIR, "Tinos-Italic.ttf"),
-      bolditalics: path.join(FONT_DIR, "Tinos-BoldItalic.ttf"),
+    Arial: {
+      normal: path.join(FONT_DIR, "LiberationSans-Regular.ttf"),
+      bold: path.join(FONT_DIR, "LiberationSans-Bold.ttf"),
+      italics: path.join(FONT_DIR, "LiberationSans-Italic.ttf"),
+      bolditalics: path.join(FONT_DIR, "LiberationSans-BoldItalic.ttf"),
     },
   });
   pdfMake.setLocalAccessPolicy((lokasi) => lokasi.startsWith(FONT_DIR));
@@ -93,8 +93,8 @@ function kop(tabel: TabelEkspor): Content[] {
     },
     {
       stack: [
-        { text: `Unit Pengolah : ${tabel.instansi.unit_pengolah}`, fontSize: 10 },
-        { text: `Nama Pimpinan Central File : ${tabel.instansi.nama_pimpinan}`, fontSize: 10 },
+        { text: `Unit Pengolah : ${tabel.instansi.unit_pengolah}`, fontSize: 12 },
+        { text: `Nama Pimpinan Central File : ${tabel.instansi.nama_pimpinan}`, fontSize: 12 },
       ],
       margin: [0, 2, 0, 10],
     },
@@ -131,7 +131,7 @@ export async function buatPdf(tabel: TabelEkspor): Promise<Buffer> {
 
   const kolom = tabel.kolom;
   const lebar = kolom.reduce((total, item) => total + item.lebar, 0);
-  const ukuranHuruf = kolom.length >= 13 ? 8 : kolom.length >= 11 ? 9 : 10;
+  const ukuranHuruf = 12;
 
   const isi: TableCell[][] = tabel.baris.map((baris) =>
     baris.map((sel, index) => ({
@@ -172,7 +172,7 @@ export async function buatPdf(tabel: TabelEkspor): Promise<Buffer> {
     pageSize: "A4",
     pageOrientation: tabel.orientasi,
     pageMargins: [24, 28, 24, 32],
-    defaultStyle: { font: "Tinos", fontSize: ukuranHuruf },
+    defaultStyle: { font: "Arial", fontSize: ukuranHuruf },
     content: konten,
     info: {
       title: tabel.judul,

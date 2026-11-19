@@ -130,10 +130,6 @@ export async function ambilDataAplikasi(userId?: string): Promise<AppData> {
       lokasi_folder: item.lokasi_folder ?? undefined,
       kurun_waktu: item.kurun_waktu ?? undefined,
       nomor_boks: item.nomor_boks ?? undefined,
-      file_path: item.file_path ?? undefined,
-      file_name: item.file_name ?? undefined,
-      file_size: item.file_size ?? undefined,
-      file_type: item.mime_type ?? undefined,
     })),
     folders: folders.map((item) => ({
       id: item.id,

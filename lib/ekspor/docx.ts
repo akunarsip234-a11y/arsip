@@ -65,7 +65,7 @@ function sel(
               ? AlignmentType.RIGHT
               : AlignmentType.LEFT,
         spacing: { before: 0, after: 0 },
-        children: [new TextRun({ text: teks, bold: opsi?.bold, size: opsi?.size ?? 18 })],
+        children: [new TextRun({ text: teks, bold: opsi?.bold, font: "Arial", size: opsi?.size ?? 24 })],
       }),
     ],
     verticalAlign: VerticalAlign.CENTER,
@@ -195,11 +195,11 @@ function kop(tabel: TabelEkspor, contentWidth: number): (Table | Paragraph)[] {
           new TableCell({
             children: [
               new Paragraph({
-                children: [new TextRun({ text: `Unit Pengolah : ${tabel.instansi.unit_pengolah}`, size: 20 })],
+                children: [new TextRun({ text: `Unit Pengolah : ${tabel.instansi.unit_pengolah}`, size: 24 })],
               }),
               new Paragraph({
                 children: [
-                  new TextRun({ text: `Nama Pimpinan Central File : ${tabel.instansi.nama_pimpinan}`, size: 20 }),
+                  new TextRun({ text: `Nama Pimpinan Central File : ${tabel.instansi.nama_pimpinan}`, size: 24 }),
                 ],
               }),
             ],
@@ -219,11 +219,11 @@ function tandaTangan(tabel: TabelEkspor, contentWidth: number): Table {
       new Paragraph({ text: "", spacing: { before: 0, after: 0 } }),
       new Paragraph({
         spacing: { before: 0, after: 0 },
-        children: [new TextRun({ text: tabel.instansi.nama_pengelola || " ", bold: true, size: 20 })],
+        children: [new TextRun({ text: tabel.instansi.nama_pengelola || " ", bold: true, size: 24 })],
       }),
       new Paragraph({
         spacing: { before: 0, after: 0 },
-        children: [new TextRun({ text: `NIP. ${tabel.instansi.nip_pengelola}`, size: 20 })],
+        children: [new TextRun({ text: `NIP. ${tabel.instansi.nip_pengelola}`, size: 24 })],
       }),
     ],
   });
@@ -238,12 +238,12 @@ function tandaTangan(tabel: TabelEkspor, contentWidth: number): Table {
       new Paragraph({
         alignment: AlignmentType.RIGHT,
         spacing: { before: 0, after: 0 },
-        children: [new TextRun({ text: tabel.instansi.nama_pimpinan || " ", bold: true, size: 20 })],
+        children: [new TextRun({ text: tabel.instansi.nama_pimpinan || " ", bold: true, size: 24 })],
       }),
       new Paragraph({
         alignment: AlignmentType.RIGHT,
         spacing: { before: 0, after: 0 },
-        children: [new TextRun({ text: `NIP. ${tabel.instansi.nip_pimpinan}`, size: 20 })],
+        children: [new TextRun({ text: `NIP. ${tabel.instansi.nip_pimpinan}`, size: 24 })],
       }),
     ],
   });
@@ -272,7 +272,7 @@ export async function buatDocx(tabel: TabelEkspor): Promise<Buffer> {
     const terlebar = columnWidths.indexOf(Math.max(...columnWidths));
     columnWidths[terlebar] += selisihLebar;
   }
-  const ukuran = tabel.kolom.length >= 13 ? 16 : 18;
+  const ukuran = 24;
 
   const isi = tabel.baris.map(
     (baris) =>
@@ -327,7 +327,7 @@ export async function buatDocx(tabel: TabelEkspor): Promise<Buffer> {
     styles: {
       default: {
         document: {
-          run: { font: "Times New Roman", size: 20 },
+          run: { font: "Arial", size: 24 },
         },
       },
     },

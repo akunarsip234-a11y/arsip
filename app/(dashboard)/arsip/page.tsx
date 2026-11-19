@@ -10,14 +10,13 @@ import {
   formatTanggal,
   formatWaktu,
   inisial,
+  petaNomorItem,
   type Arsip,
   type ArsipInput,
   type Folder,
   type FolderInput,
 } from "@/lib/types";
 import { useData } from "@/lib/data-store";
-import { formatBytes } from "@/lib/export";
-import { ambilUrlUnduhAksi } from "@/lib/actions/storage";
 import { hitungRetensi } from "@/lib/retensi";
 import { LABEL_JENIS, type FormatEkspor, type JenisEkspor } from "@/lib/ekspor/types";
 
@@ -72,7 +71,6 @@ type ArsipFormState = {
   tanggal_arsip: string;
   keterangan: string;
   nomor_berkas: string;
-  nomor_item: string;
   indeks: string;
   jumlah_folder: string;
   tingkat_perkembangan: string;
@@ -83,9 +81,6 @@ type ArsipFormState = {
   lokasi_folder: string;
   kurun_waktu: string;
   nomor_boks: string;
-  file_name: string;
-  file_size?: number;
-  file_type: string;
 };
 
 type FolderFormState = {
@@ -95,7 +90,6 @@ type FolderFormState = {
 
 const DETAIL_KOSONG = {
   nomor_berkas: "",
-  nomor_item: "",
   indeks: "",
   jumlah_folder: "",
   tingkat_perkembangan: "",
@@ -138,7 +132,6 @@ export default function ArsipPage() {
     saveFolder,
     deleteFolder,
     nextNomorArsip,
-    catatLog,
     refreshData,
     toast,
   } = useData();
@@ -183,8 +176,6 @@ export default function ArsipPage() {
     tanggal_arsip: "",
     keterangan: "",
     ...DETAIL_KOSONG,
-    file_name: "",
-    file_type: "",
   });
   const [formError, setFormError] = useState("");
   const [kodeOpen, setKodeOpen] = useState(false);
@@ -247,6 +238,8 @@ export default function ArsipPage() {
     return data.arsip;
   }, [data.arsip, folderAktifId]);
 
+  const nomorItem = useMemo(() => petaNomorItem(data.arsip), [data.arsip]);
+
   // Filter arsip
   const filtered = useMemo(() => {
     const kata = cari.trim().toLowerCase();
@@ -271,7 +264,7 @@ export default function ArsipPage() {
 
         return cocokCari && cocokTahun && cocokBulan && cocokStatus && cocokKode && cocokPengguna && cocokTanggal;
       })
-      .sort((a, b) => b.tanggal_arsip.localeCompare(a.tanggal_arsip));
+      .sort((a, b) => a.tanggal_arsip.localeCompare(b.tanggal_arsip) || a.nomor_arsip.localeCompare(b.nomor_arsip));
   }, [arsipTergolong, bulan, cari, kode, modeTanggal, pengguna, status, tahun, tanggal1, tanggal2]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
@@ -388,12 +381,14 @@ export default function ArsipPage() {
   const bukaFolder = (id: string) => {
     setFolderAktifId(id);
     setTampilanSemua(false);
+    setSelectedIds(new Set());
     setPage(1);
   };
 
   const kembaliKeSemuaFolder = () => {
     setFolderAktifId(null);
     setTampilanSemua(false);
+    setSelectedIds(new Set());
     setPage(1);
   };
 
@@ -417,8 +412,6 @@ export default function ArsipPage() {
       tanggal_arsip: tanggal,
       keterangan: "",
       ...DETAIL_KOSONG,
-      file_name: "",
-      file_type: "",
     });
     setKodeOpen(false);
     setKodeQuery(kodeAwal ? `${kodeAwal.kode} - ${kodeAwal.nama}` : "");
@@ -479,7 +472,6 @@ export default function ArsipPage() {
       tanggal_arsip: arsip.tanggal_arsip,
       keterangan: arsip.keterangan ?? "",
       nomor_berkas: arsip.nomor_berkas ?? "",
-      nomor_item: arsip.nomor_item ?? "",
       indeks: arsip.indeks ?? "",
       jumlah_folder: arsip.jumlah_folder?.toString() ?? "",
       tingkat_perkembangan: arsip.tingkat_perkembangan ?? "",
@@ -490,9 +482,6 @@ export default function ArsipPage() {
       lokasi_folder: arsip.lokasi_folder ?? "",
       kurun_waktu: arsip.kurun_waktu ?? "",
       nomor_boks: arsip.nomor_boks ?? "",
-      file_name: arsip.file_name ?? "",
-      file_size: arsip.file_size,
-      file_type: arsip.file_type ?? "",
     });
     setFormError("");
     setDetailId(null);
@@ -513,7 +502,6 @@ export default function ArsipPage() {
       tanggal_arsip: form.tanggal_arsip,
       keterangan: form.keterangan,
       nomor_berkas: form.nomor_berkas,
-      nomor_item: form.nomor_item,
       indeks: form.indeks,
       jumlah_folder: angkaDariTeks(form.jumlah_folder),
       tingkat_perkembangan: form.tingkat_perkembangan,
@@ -524,9 +512,6 @@ export default function ArsipPage() {
       lokasi_folder: form.lokasi_folder,
       kurun_waktu: form.kurun_waktu,
       nomor_boks: form.nomor_boks,
-      file_name: form.file_name || undefined,
-      file_size: form.file_size,
-      file_type: form.file_type || undefined,
     };
     setMenyimpanArsip(true);
     try {
@@ -540,21 +525,6 @@ export default function ArsipPage() {
     } finally {
       setMenyimpanArsip(false);
     }
-  };
-
-  const unduh = async (arsip: Arsip) => {
-    if (!arsip.file_path) {
-      toast("Berkas untuk arsip ini belum diunggah.", "info");
-      return;
-    }
-    const hasil = await ambilUrlUnduhAksi(arsip.file_path);
-    if (!hasil.ok || !hasil.url) {
-      toast(hasil.message ?? "Gagal menyiapkan unduhan.", "error");
-      return;
-    }
-    window.open(hasil.url, "_blank", "noopener,noreferrer");
-    await catatLog("Mengunduh arsip", `${arsip.nomor_arsip} - ${arsip.judul}`, "ekspor");
-    toast("Unduhan disiapkan.");
   };
 
   const unduhEkspor = async () => {
@@ -680,6 +650,7 @@ export default function ArsipPage() {
                 className="btn btn-ghost btn-sm"
                 onClick={() => {
                   setTampilanSemua(true);
+                  setSelectedIds(new Set());
                   setPage(1);
                 }}
               >
@@ -1066,9 +1037,11 @@ export default function ArsipPage() {
                       />
                     </th>
                   ) : null}
+                  <th style={{ width: 44 }}>No.</th>
                   <th>Uraian Informasi Arsip</th>
                   <th>Kode</th>
                   {!folderAktif ? <th>Folder</th> : null}
+                  <th>Tanggal arsip</th>
                   <th>Ditambahkan Oleh</th>
                   <th>Disimpan Sampai</th>
                   <th style={{ width: 56 }}>Aksi</th>
@@ -1084,6 +1057,9 @@ export default function ArsipPage() {
                           </td>
                         ) : null}
                         <td>
+                          <div className="skeleton skeleton-text" style={{ width: 24, marginBottom: 0 }} />
+                        </td>
+                        <td>
                           <div className="skeleton skeleton-text" style={{ width: "78%" }} />
                           <div className="skeleton skeleton-text" style={{ width: "38%", marginBottom: 0 }} />
                         </td>
@@ -1095,6 +1071,9 @@ export default function ArsipPage() {
                             <div className="skeleton skeleton-text" style={{ width: 90, marginBottom: 0 }} />
                           </td>
                         ) : null}
+                        <td>
+                          <div className="skeleton skeleton-text" style={{ width: 74, marginBottom: 0 }} />
+                        </td>
                         <td>
                           <div className="skeleton skeleton-text" style={{ width: 120, marginBottom: 0 }} />
                         </td>
@@ -1122,6 +1101,9 @@ export default function ArsipPage() {
                             </td>
                           ) : null}
                           <td>
+                            <span className="mono">{nomorItem.get(arsip.id) ?? "-"}</span>
+                          </td>
+                          <td>
                             <div className="cell-title">{arsip.judul}</div>
                             <div className="cell-sub mono">{arsip.nomor_arsip}</div>
                           </td>
@@ -1133,6 +1115,7 @@ export default function ArsipPage() {
                               <span className="badge badge-accent">{fItem?.nama ?? "-"}</span>
                             </td>
                           ) : null}
+                          <td>{formatTanggal(arsip.tanggal_arsip)}</td>
                           <td>
                             <div className="user-cell">
                               <span className="avatar avatar-xs">{inisial(arsip.pembuat)}</span>
@@ -1160,15 +1143,6 @@ export default function ArsipPage() {
                                   }}
                                 >
                                   <Icon name="file" size={15} /> Lihat detail
-                                </button>
-                                <button
-                                  type="button"
-                                  onClick={(event) => {
-                                    event.currentTarget.closest("details")?.removeAttribute("open");
-                                    unduh(arsip);
-                                  }}
-                                >
-                                  <Icon name="download" size={15} /> Unduh
                                 </button>
                                 {canManage ? (
                                   <button
@@ -1201,7 +1175,7 @@ export default function ArsipPage() {
                     })}
                 {ready && paged.length === 0 ? (
                   <tr>
-                    <td colSpan={(folderAktif ? 5 : 6) + (canManage ? 1 : 0)}>
+                    <td colSpan={(folderAktif ? 7 : 8) + (canManage ? 1 : 0)}>
                       <div className="empty" style={{ padding: "32px 16px" }}>
                         <p className="empty-title">
                           {folderAktif ? "Folder ini belum memiliki arsip." : "Tidak ada arsip yang cocok dengan filter."}
@@ -1274,9 +1248,6 @@ export default function ArsipPage() {
               <button type="button" className="btn btn-ghost" onClick={() => setDetailId(null)}>
                 Tutup
               </button>
-              <button type="button" className="btn btn-ghost" onClick={() => unduh(detail)}>
-                <Icon name="download" size={15} /> Unduh
-              </button>
               {canManage ? (
                 <>
                   <button type="button" className="btn btn-danger" onClick={() => setHapus(detail)}>
@@ -1293,18 +1264,6 @@ export default function ArsipPage() {
       >
         {detail ? (
           <>
-            <div className="preview">
-              <span className="preview-icon">
-                <Icon name="file" size={26} />
-              </span>
-              <strong>{detail.file_name ?? "Belum ada berkas"}</strong>
-              <small>
-                {detail.file_name
-                  ? `${detail.file_type || "Berkas"} - ${formatBytes(detail.file_size)}`
-                  : "Berkas belum diunggah"}
-              </small>
-            </div>
-
             <div className="meta-grid">
               <div className="meta-item">
                 <span>Folder</span>
@@ -1352,8 +1311,8 @@ export default function ArsipPage() {
               </div>
             ) : null}
 
-            {detail.nomor_berkas ||
-            detail.nomor_item ||
+            {nomorItem.get(detail.id) ||
+            detail.nomor_berkas ||
             detail.indeks ||
             detail.jumlah_folder ||
             detail.tingkat_perkembangan ||
@@ -1373,12 +1332,10 @@ export default function ArsipPage() {
                       <strong>{detail.nomor_berkas}</strong>
                     </div>
                   ) : null}
-                  {detail.nomor_item ? (
-                    <div className="meta-item">
-                      <span>No. item arsip</span>
-                      <strong>{detail.nomor_item}</strong>
-                    </div>
-                  ) : null}
+                  <div className="meta-item">
+                    <span>No. item arsip</span>
+                    <strong>{nomorItem.get(detail.id) ?? "-"}</strong>
+                  </div>
                   {detail.indeks ? (
                     <div className="meta-item">
                       <span>Indeks berkas</span>
@@ -1702,35 +1659,6 @@ export default function ArsipPage() {
                 ) : null}
               </div>
             </div>
-            <div className="field">
-              <label htmlFor="berkas-arsip">Berkas arsip</label>
-              <input
-                id="berkas-arsip"
-                type="file"
-                className="input"
-                accept=".pdf,.jpg,.jpeg,.png,.doc,.docx,.xls,.xlsx"
-                onChange={(event) => {
-                  const file = event.target.files?.[0];
-                  if (!file) return;
-                  if (file.size > 10 * 1024 * 1024) {
-                    event.target.value = "";
-                    toast("Ukuran berkas maksimal 10 MB.", "error");
-                    return;
-                  }
-                  setForm({
-                    ...form,
-                    file_name: file.name,
-                    file_size: file.size,
-                    file_type: file.type || file.name.split(".").pop() || "",
-                  });
-                }}
-              />
-              <span className="field-hint">
-                {form.file_name
-                  ? `${form.file_name} - ${formatBytes(form.file_size)}`
-                  : "Opsional, maksimal 10 MB."}
-              </span>
-            </div>
             <div className="field field-full">
               <label htmlFor="keterangan-arsip">Keterangan</label>
               <textarea
@@ -1753,16 +1681,6 @@ export default function ArsipPage() {
                     value={form.nomor_berkas}
                     onChange={(event) => setForm({ ...form, nomor_berkas: event.target.value })}
                     placeholder="Contoh: B-001/2026"
-                  />
-                </div>
-                <div className="field">
-                  <label htmlFor="nomor-item">No. item arsip</label>
-                  <input
-                    id="nomor-item"
-                    className="input"
-                    value={form.nomor_item}
-                    onChange={(event) => setForm({ ...form, nomor_item: event.target.value })}
-                    placeholder="Contoh: 1"
                   />
                 </div>
                 <div className="field field-full">
@@ -1871,9 +1789,6 @@ export default function ArsipPage() {
                 </div>
               </div>
             </details>
-          </div>
-          <div className="form-note">
-            Berkas yang dipilih hanya dicatat metadatanya. Penyimpanan berkas asli menunggu integrasi storage.
           </div>
         </form>
       </Modal>

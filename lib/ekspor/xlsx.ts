@@ -18,7 +18,7 @@ function gayaSel(
     wrap?: boolean;
   },
 ) {
-  sel.font = { name: "Times New Roman", size: opsi.size ?? 10, bold: opsi.bold };
+  sel.font = { name: "Arial", size: opsi.size ?? 12, bold: opsi.bold };
   sel.alignment = {
     horizontal: opsi.align ?? "left",
     vertical: "middle",
@@ -43,13 +43,13 @@ function mergeBaris(
         if (span > 1) ws.mergeCells(baris, index + 1, baris, index + span);
         const sel = ws.getCell(baris, index + 1);
         sel.value = item.grup;
-        gayaSel(sel, { bold: true, align: "center", size: 10 });
+        gayaSel(sel, { bold: true, align: "center", size: 12 });
         index += span;
       } else {
         ws.mergeCells(baris, index + 1, baris + 1, index + 1);
         const sel = ws.getCell(baris, index + 1);
         sel.value = item.label;
-        gayaSel(sel, { bold: true, align: "center", size: 10 });
+        gayaSel(sel, { bold: true, align: "center", size: 12 });
         index += 1;
       }
     }
@@ -66,7 +66,7 @@ function mergeBaris(
         for (let lanjut = 0; lanjut < span; lanjut += 1) {
           const sel = ws.getCell(baris, index + lanjut + 1);
           sel.value = kolom[index + lanjut].label;
-          gayaSel(sel, { bold: true, align: "center", size: 10 });
+          gayaSel(sel, { bold: true, align: "center", size: 12 });
         }
         index += span;
       } else {
@@ -79,7 +79,7 @@ function mergeBaris(
   kolom.forEach((_, index) => {
     const sel = ws.getCell(baris, index + 1);
     sel.value = index + 1;
-    gayaSel(sel, { bold: true, align: "center", size: 10 });
+    gayaSel(sel, { bold: true, align: "center", size: 12 });
   });
 }
 
@@ -120,7 +120,7 @@ export async function buatXlsx(tabel: TabelEkspor): Promise<Buffer> {
     ws.mergeCells(baris, mulaiJudul, baris, jumlahKolom);
     const judul = ws.getCell(baris, mulaiJudul);
     judul.value = tabel.judul;
-    judul.font = { name: "Times New Roman", size: 14, bold: true };
+    judul.font = { name: "Arial", size: 14, bold: true };
     judul.alignment = { horizontal: "center", vertical: "middle" };
     ws.getRow(baris).height = 24;
   }
@@ -130,14 +130,14 @@ export async function buatXlsx(tabel: TabelEkspor): Promise<Buffer> {
     ws.mergeCells(baris, 3, baris, jumlahKolom);
     const unit = ws.getCell(baris, 3);
     unit.value = `Unit Pengolah : ${tabel.instansi.unit_pengolah}`;
-    unit.font = { name: "Times New Roman", size: 10 };
+    unit.font = { name: "Arial", size: 12 };
     unit.alignment = { horizontal: "left", vertical: "middle" };
 
     baris += 1;
     ws.mergeCells(baris, 3, baris, jumlahKolom);
     const pimpinan = ws.getCell(baris, 3);
     pimpinan.value = `Nama Pimpinan Central File : ${tabel.instansi.nama_pimpinan}`;
-    pimpinan.font = { name: "Times New Roman", size: 10 };
+    pimpinan.font = { name: "Arial", size: 12 };
     pimpinan.alignment = { horizontal: "left", vertical: "middle" };
   }
 
@@ -155,7 +155,7 @@ export async function buatXlsx(tabel: TabelEkspor): Promise<Buffer> {
     tabel.kolom.forEach((kolom, index) => {
       const sel = ws.getCell(baris, index + 1);
       sel.value = kolom.label;
-      gayaSel(sel, { bold: true, align: "center", size: 10 });
+      gayaSel(sel, { bold: true, align: "center", size: 12 });
     });
     baris += 1;
     mergeBaris(ws, baris, tabel.kolom, "nomor");
@@ -175,7 +175,7 @@ export async function buatXlsx(tabel: TabelEkspor): Promise<Buffer> {
       sel.value = nilai === "" ? null : nilai;
       gayaSel(sel, {
         align: tabel.kolom[index]?.align ?? "left",
-        size: tabel.kolom.length >= 13 ? 9 : 10,
+        size: 12,
       });
     });
     baris += 1;
@@ -190,11 +190,11 @@ export async function buatXlsx(tabel: TabelEkspor): Promise<Buffer> {
     ws.mergeCells(baris, tengah + 1, baris, jumlahKolom);
     const kiriJudul = ws.getCell(baris, 1);
     kiriJudul.value = "Pengelola Central File,";
-    kiriJudul.font = { name: "Times New Roman", size: 10 };
+    kiriJudul.font = { name: "Arial", size: 12 };
     kiriJudul.alignment = { horizontal: "center", vertical: "middle" };
     const kananJudul = ws.getCell(baris, tengah + 1);
     kananJudul.value = "Mengetahui, Pimpinan Central File";
-    kananJudul.font = { name: "Times New Roman", size: 10 };
+    kananJudul.font = { name: "Arial", size: 12 };
     kananJudul.alignment = { horizontal: "center", vertical: "middle" };
 
     baris += 3;
@@ -202,11 +202,11 @@ export async function buatXlsx(tabel: TabelEkspor): Promise<Buffer> {
     ws.mergeCells(baris, tengah + 1, baris, jumlahKolom);
     const kiriNama = ws.getCell(baris, 1);
     kiriNama.value = tabel.instansi.nama_pengelola;
-    kiriNama.font = { name: "Times New Roman", size: 10, underline: true };
+    kiriNama.font = { name: "Arial", size: 12, underline: true };
     kiriNama.alignment = { horizontal: "center", vertical: "middle" };
     const kananNama = ws.getCell(baris, tengah + 1);
     kananNama.value = tabel.instansi.nama_pimpinan;
-    kananNama.font = { name: "Times New Roman", size: 10, underline: true };
+    kananNama.font = { name: "Arial", size: 12, underline: true };
     kananNama.alignment = { horizontal: "center", vertical: "middle" };
 
     baris += 1;
@@ -214,16 +214,15 @@ export async function buatXlsx(tabel: TabelEkspor): Promise<Buffer> {
     ws.mergeCells(baris, tengah + 1, baris, jumlahKolom);
     const kiriNip = ws.getCell(baris, 1);
     kiriNip.value = `NIP. ${tabel.instansi.nip_pengelola}`;
-    kiriNip.font = { name: "Times New Roman", size: 10 };
+    kiriNip.font = { name: "Arial", size: 12 };
     kiriNip.alignment = { horizontal: "center", vertical: "middle" };
     const kananNip = ws.getCell(baris, tengah + 1);
     kananNip.value = `NIP. ${tabel.instansi.nip_pimpinan}`;
-    kananNip.font = { name: "Times New Roman", size: 10 };
+    kananNip.font = { name: "Arial", size: 12 };
     kananNip.alignment = { horizontal: "center", vertical: "middle" };
   }
 
   ws.pageSetup.printTitlesRow = `${awalHeader}:${akhirHeader}`;
-  ws.views = [{ state: "frozen", ySplit: akhirHeader }];
 
   const buffer = await workbook.xlsx.writeBuffer();
   return Buffer.from(buffer as ArrayBuffer);

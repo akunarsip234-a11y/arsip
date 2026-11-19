@@ -86,10 +86,6 @@ model Arsip {
   lokasi_folder       String?
   kurun_waktu         String?
   nomor_boks          String?
-  file_path           String?
-  file_name           String?
-  file_size           Int?
-  mime_type           String?
   created_by          String
   updated_by          String?
   akhir_aktif         DateTime?
